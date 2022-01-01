@@ -76,3 +76,47 @@ class FeatureSelection:
                         else:
                                 break
                 return score
+        
+        def all_subsets(self, category_dict):
+                #category_dict format: {'cat_name': {cat_features': value, 'cat_fixed':value, 'cat_min': value, 'cat_max':value}}
+                #find all combinations of cat_features that include cat_fixed features
+                #also minimum/ maximum number of category members is cat_min/cat_max
+                
+                all_cat_valid_set = []
+                for value in category_dict.values():
+                        #exclude fixed_feature to improve performance
+                        cat_fixed_features = value['cat_fixed'] if 'cat_fixed' in value.keys() else []
+                        cat_feature_set = list(set(value['cat_features'])-set(cat_fixed_features))
+
+                        #find all combination of feature_set exclude fixed_feature
+                        cat_sets = list(map(list, list(chain.from_iterable(list(combinations(cat_feature_set, r) for r in range(len(cat_feature_set)+1))))))
+                        
+                        #include fixed_feature in each combination and set min/max number of category member
+                        cat_min = value['cat_min'] if 'cat_min' in value.keys() else 1
+                        cat_max = value['cat_max'] if 'cat_max' in value.keys() else len(value['cat_features'])
+                        cat_valid_sets = []
+                        for each_set in cat_sets:
+                                each_set.extend(cat_fixed_features)
+                                if len(each_set)>=cat_min and len(each_set)<=cat_max:
+                                        cat_valid_sets.append(each_set)
+                        all_cat_valid_set.append(cat_valid_sets)
+
+                #extract product of feature set members
+                feature_set = reduce(lambda x, y: map(lambda p: p[0]+p[1], product(x, y)), all_cat_valid_set[:])
+
+                return feature_set
+        
+        def compelete_search_with_fisher(self, data, category_dict):
+                #find all limited subsets of features by count or any fixed feature, mentioned in category_dict
+                #caclulate fisher score for all sub sets
+
+                X = data.drop("target", 1)       
+                y = data['target']               
+                subsets = self.all_subsets(category_dict)
+                subsets_score=dict()
+                for subset in subsets:
+                        subsets_score[str(subset)] = self.fisher_score(X[subset],y)
+                        
+                return subsets_score
+
+
