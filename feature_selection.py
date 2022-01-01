@@ -118,5 +118,26 @@ class FeatureSelection:
                         subsets_score[str(subset)] = self.fisher_score(X[subset],y)
                         
                 return subsets_score
+        
+        def mutual_information(self, X, y):
+                #calculate mutual information for each feaure in feature set
+                #and retuen summated value
 
+                total_score = 0
+                mi_score = MIC(X,y)
+                total_score = sum(mi_score)
 
+                return total_score
+
+        def compelete_search_with_mi(self, data, category_dict):
+                #find all limited subsets of features by count or any fixed feature, mentioned in category_dict
+                #caclulate mutual informaion for all sub sets
+
+                X = data.drop("target", 1)
+                y = data['target']       
+                subsets = self.all_subsets(category_dict)
+                subsets_score=dict()
+                for subset in subsets:
+                        subsets_score[str(subset)] = self.mutual_information(X[subset],y)
+                        
+                return subsets_score
